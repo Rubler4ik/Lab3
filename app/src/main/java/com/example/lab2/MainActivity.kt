@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
             else -> ""
         }
 
+
         if (buttonText.isNotEmpty()) {
             if (buttonText == getString(R.string.buttonBack_text)) {
                 finish()
