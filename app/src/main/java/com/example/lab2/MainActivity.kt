@@ -1,61 +1,106 @@
 package com.example.lab2
 
 import android.os.Bundle
+import android.view.ContextMenu
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.widget.Button
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import android.util.Log
-
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var container: LinearLayout
+    private var selectedButton: Button? = null // Переменная для хранения выбранной кнопки
+    private lateinit var infoText: TextView // Для управления начальным текстом
+    private var buttonCount = 0 // Счетчик кнопок
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        container = findViewById(R.id.container)
+        infoText = findViewById(R.id.info_text)
+        // Больше не добавляем кнопку при старте
     }
 
-    fun onButtonClick(view: View) {
-        val textResult = findViewById<TextView>(R.id.TextResult)
-        val buttonPressText = getString(R.string.buttonPress_text)
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
 
-        val buttonText = when (view.id) {
-            R.id.button1 -> getString(R.string.button1_text)
-            R.id.button2 -> getString(R.string.button2_text)
-            R.id.button3 -> getString(R.string.button3_text)
-            R.id.button4 -> getString(R.string.button4_text)
-            R.id.button5 -> getString(R.string.button5_text)
-            R.id.button6 -> getString(R.string.button6_text)
-            R.id.button7 -> getString(R.string.button7_text)
-            R.id.button8 -> getString(R.string.button8_text)
-            R.id.button9 -> getString(R.string.button9_text)
-            R.id.button10 -> getString(R.string.button10_text)
-            R.id.button11 -> getString(R.string.button11_text)
-            R.id.button12 -> getString(R.string.button12_text)
-            R.id.button13 -> getString(R.string.button13_text)
-            R.id.button14 -> getString(R.string.button14_text)
-            R.id.button15 -> getString(R.string.button15_text)
-            R.id.button16 -> getString(R.string.button16_text)
-            R.id.button17 -> getString(R.string.button17_text)
-            R.id.button18 -> getString(R.string.button18_text)
-            R.id.button19 -> getString(R.string.button19_text)
-            R.id.button20 -> getString(R.string.button20_text)
-            R.id.buttonback -> getString(R.string.buttonBack_text)
-            else -> ""
-        }
-
-
-        if (buttonText.isNotEmpty()) {
-            if (buttonText == getString(R.string.buttonBack_text)) {
-                finish()
-            } else {
-                textResult.text = "$buttonPressText $buttonText"
-                Log.d("ButtonClick", "$buttonPressText $buttonText")
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_add -> {
+                addNewButton()
+                true
             }
+            R.id.menu_clear -> {
+                container.removeAllViews()
+                buttonCount = 0 // Сбрасываем счетчик кнопок
+                infoText.visibility = View.VISIBLE // Показываем текст при очистке
+                Toast.makeText(this, "Экран очищен", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.menu_exit -> {
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
+    private fun addNewButton() {
+        val newButton = Button(this).apply {
+            buttonCount++ // Увеличиваем счетчик кнопок
+            text = "Новый компонент $buttonCount"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 16, 0, 16) // Добавляем отступы между кнопками
+            }
+            setOnLongClickListener {
+                selectedButton = this
+                Toast.makeText(this@MainActivity, "Долгое нажатие", Toast.LENGTH_SHORT).show()
+                openContextMenu(this)
+                true
+            }
+            registerForContextMenu(this) // Регистрируем для контекстного меню
+        }
+
+        if (container.childCount == 1 && container.getChildAt(0) is TextView) {
+            infoText.visibility = View.GONE // Скрываем текст при добавлении первой кнопки
+        }
+        container.addView(newButton)
+        Toast.makeText(this, "Компонент добавлен", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onCreateContextMenu(
+        menu: ContextMenu?,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
+        super.onCreateContextMenu(menu, v, menuInfo)
+        if (v is Button) {
+            selectedButton = v
+            menuInflater.inflate(R.menu.context_menu, menu)
+            menu?.setHeaderTitle("Выберите цвет")
+        }
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+        selectedButton?.let { button ->
+            when (item.itemId) {
+                R.id.context_red -> button.setBackgroundColor(resources.getColor(android.R.color.holo_red_light))
+                R.id.context_blue -> button.setBackgroundColor(resources.getColor(android.R.color.holo_blue_light))
+                R.id.context_green -> button.setBackgroundColor(resources.getColor(android.R.color.holo_green_light))
+            }
+            return true
+        }
+        return super.onContextItemSelected(item)
+    }
 }
